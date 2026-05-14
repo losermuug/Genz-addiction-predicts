@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#222}.title{font-size:22px;font-weight:700}.label{font-size:12px}.small{font-size:11px;fill:#555}</style>
+<text x="40" y="42" class="title">Numeric feature means by addiction level</text>
+<line x1="110" y1="425" x2="890" y2="425" stroke="#333"/>
+<line x1="110" y1="95" x2="110" y2="425" stroke="#333"/>
+<rect x="138.0" y="99" width="22" height="326" fill="#2f80ed"/>
+<rect x="164.0" y="95" width="22" height="330" fill="#27ae60"/>
+<rect x="190.0" y="425" width="22" height="0" fill="#eb5757"/>
+<text x="174.0" y="453" text-anchor="middle" class="small">age</text>
+<rect x="249.42857142857144" y="425" width="22" height="0" fill="#2f80ed"/>
+<rect x="275.42857142857144" y="262" width="22" height="163" fill="#27ae60"/>
+<rect x="301.42857142857144" y="95" width="22" height="330" fill="#eb5757"/>
+<text x="285.42857142857144" y="453" text-anchor="middle" class="small">daily usage hours</text>
+<rect x="360.8571428571429" y="95" width="22" height="330" fill="#2f80ed"/>
+<rect x="386.8571428571429" y="260" width="22" height="165" fill="#27ae60"/>
+<rect x="412.8571428571429" y="425" width="22" height="0" fill="#eb5757"/>
+<text x="396.8571428571429" y="453" text-anchor="middle" class="small">num platforms used</text>
+<rect x="472.2857142857143" y="388" width="22" height="37" fill="#2f80ed"/>
+<rect x="498.2857142857143" y="425" width="22" height="0" fill="#27ae60"/>
+<rect x="524.2857142857142" y="95" width="22" height="330" fill="#eb5757"/>
+<text x="508.2857142857143" y="453" text-anchor="middle" class="small">avg session minutes</text>
+<rect x="583.7142857142858" y="241" width="22" height="184" fill="#2f80ed"/>
+<rect x="609.7142857142858" y="95" width="22" height="330" fill="#27ae60"/>
+<rect x="635.7142857142858" y="425" width="22" height="0" fill="#eb5757"/>
+<text x="619.7142857142858" y="453" text-anchor="middle" class="small">night usage</text>
+<rect x="695.1428571428571" y="95" width="22" height="330" fill="#2f80ed"/>
+<rect x="721.1428571428571" y="255" width="22" height="170" fill="#27ae60"/>
+<rect x="747.1428571428571" y="425" width="22" height="0" fill="#eb5757"/>
+<text x="731.1428571428571" y="453" text-anchor="middle" class="small">mental health score</text>
+<rect x="806.5714285714286" y="425" width="22" height="0" fill="#2f80ed"/>
+<rect x="832.5714285714286" y="95" width="22" height="330" fill="#27ae60"/>
+<rect x="858.5714285714286" y="137" width="22" height="288" fill="#eb5757"/>
+<text x="842.5714285714286" y="453" text-anchor="middle" class="small">screen time before sleep</text>
+</svg>

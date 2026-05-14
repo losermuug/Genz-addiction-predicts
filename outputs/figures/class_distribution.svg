@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="460" viewBox="0 0 760 460">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#222}.title{font-size:22px;font-weight:700}.label{font-size:12px}.small{font-size:11px;fill:#555}</style>
+<text x="40" y="42" class="title">Addiction level class distribution</text>
+<line x1="90" y1="370" x2="680" y2="370" stroke="#333"/>
+<line x1="90" y1="80" x2="90" y2="370" stroke="#333"/>
+<rect x="160" y="247" width="115" height="123" fill="#2f80ed"/>
+<text x="217.5" y="396" text-anchor="middle" class="label">Low</text>
+<text x="217.5" y="239" text-anchor="middle" class="label">200,976</text>
+<rect x="355" y="80" width="115" height="290" fill="#27ae60"/>
+<text x="412.5" y="396" text-anchor="middle" class="label">Medium</text>
+<text x="412.5" y="72" text-anchor="middle" class="label">471,874</text>
+<rect x="550" y="292" width="115" height="78" fill="#eb5757"/>
+<text x="607.5" y="396" text-anchor="middle" class="label">High</text>
+<text x="607.5" y="284" text-anchor="middle" class="label">127,150</text>
+</svg>

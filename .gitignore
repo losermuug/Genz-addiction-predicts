@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Large local data files
+genz_social_media_usage_1M.csv
+data/processed/*.csv
+.genz_social_media_usage_1M.csv

@@ -1,0 +1,25 @@
+---
+title: "Naive Bayes ашиглан донтолтын түвшин тогтоох нь"
+format: revealjs
+---
+
+## Зорилго
+
+Social media хэрэглээний өгөгдлөөс донтолтын түвшинг `Low`, `Medium`, `High` гэж ангилах.
+
+## Өгөгдөл
+
+- `genz_social_media_usage_1M.csv`
+- 1,000,000 мөр
+- Тоон болон категори хувьсагчтай
+
+## Арга
+
+- Gaussian Naive Bayes
+- Categorical Naive Bayes
+- Laplace smoothing
+- Log probability
+
+## Үр дүн
+
+Үр дүн болон графикууд `outputs/` хавтаст хадгалагдана.

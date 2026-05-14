@@ -1,0 +1,26 @@
+---
+title: "Naive Bayes ашиглан донтолтын түвшин тогтоох нь"
+format: pdf
+---
+
+## Хураангуй
+
+Энэхүү төслийн зорилго нь Gen Z хэрэглэгчдийн social media хэрэглээний өгөгдөл дээр үндэслэн `addiction_level` буюу донтолтын түвшинг `Low`, `Medium`, `High` гэсэн гурван ангилалд Naive Bayes алгоритмаар ангилах явдал юм.
+
+## Өгөгдөл
+
+Ашигласан өгөгдөл нь `genz_social_media_usage_1M.csv` файл бөгөөд нас, хүйс, улс, өдөр тутмын хэрэглээний цаг, хэрэглэдэг платформ, шөнийн хэрэглээ, mental health score зэрэг хувьсагчтай.
+
+## Арга зүй
+
+Тоон хувьсагчдад Gaussian Naive Bayes, категори хувьсагчдад Laplace smoothing ашигласан categorical Naive Bayes хэрэглэсэн. Эцсийн ангиллыг class prior болон feature бүрийн log probability-ийн нийлбэрээр сонгосон.
+
+## Ажиллуулах код
+
+```{bash}
+python3 src/main.py
+```
+
+## Үр дүн
+
+Загварын нарийвчлал болон confusion matrix нь `outputs/metrics.json` файлд хадгалагдана. Visualization зургууд `outputs/figures/` хавтас дотор үүснэ.

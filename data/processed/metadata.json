@@ -1,0 +1,56 @@
+{
+  "source_file": "genz_social_media_usage_1M.csv",
+  "target_column": "addiction_level",
+  "numeric_features": [
+    "age",
+    "daily_usage_hours",
+    "num_platforms_used",
+    "avg_session_minutes",
+    "night_usage",
+    "mental_health_score",
+    "screen_time_before_sleep"
+  ],
+  "categorical_features": [
+    "gender",
+    "country",
+    "primary_platform",
+    "purpose"
+  ],
+  "train_rows": 800000,
+  "dev_rows": 200000,
+  "train_class_counts": {
+    "High": 127150,
+    "Low": 200976,
+    "Medium": 471874
+  },
+  "dev_class_counts": {
+    "High": 31787,
+    "Low": 50244,
+    "Medium": 117969
+  },
+  "cleaning_summary": {
+    "rows_before": 1000000,
+    "rows_after_cleaning": 1000000,
+    "rows_after_deduplication": 1000000,
+    "duplicates_removed": 0,
+    "missing_values_before_cleaning": {
+      "age": 0,
+      "daily_usage_hours": 0,
+      "num_platforms_used": 0,
+      "avg_session_minutes": 0,
+      "night_usage": 0,
+      "mental_health_score": 0,
+      "screen_time_before_sleep": 0,
+      "gender": 0,
+      "country": 0,
+      "primary_platform": 0,
+      "purpose": 0,
+      "addiction_level": 0
+    },
+    "class_counts": {
+      "High": 158937,
+      "Low": 251220,
+      "Medium": 589843
+    }
+  }
+}
