@@ -6,4 +6,10 @@ __pycache__/
 # Large local data files
 genz_social_media_usage_1M.csv
 data/processed/*.csv
+
+# Quarto build cache/intermediate files
+report/.quarto/
+report/report.tex
+report/report_files/
+outputs/figures/*.svg.png
 .genz_social_media_usage_1M.csv

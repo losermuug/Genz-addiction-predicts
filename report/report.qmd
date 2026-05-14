@@ -1,26 +1,628 @@
 ---
-title: "Naive Bayes ашиглан донтолтын түвшин тогтоох нь"
-format: pdf
+title: "Naive Bayes ашиглан social media донтолтын түвшин тогтоох нь"
+subtitle: "Gen Z хэрэглэгчдийн social media хэрэглээний өгөгдөл дээр хийсэн машин сургалтын төсөл"
+abstract: Энэхүү ажлаар Gen Z хэрэглэгчдийн social media хэрэглээний өгөгдөлд тулгуурлан хэрэглэгчийн донтолтын түвшинг Low, Medium, High гэсэн гурван ангилалд Naive Bayes алгоритмаар ангилах загвар боловсруулав. Өгөгдлийг цэвэрлэж, сургалтын болон хөгжүүлэлтийн хэсэгт хуваан, тоон хувьсагчдад Gaussian Naive Bayes, категори хувьсагчдад Laplace smoothing бүхий categorical Naive Bayes ашигласан. Загварыг 200,000 мөр хөгжүүлэлтийн өгөгдөл дээр шалгахад accuracy 93.05 хувь, macro F1-score 92.29 хувь гарсан.
+author: "Багийн нэр / гишүүдийн нэрс"
+date: 2026-05-14
+date-format: "YYYY оны M-р сарын D"
+
+project:
+  execute-dir: project
+  preview: false
+
+toc: true
+toc-depth: 3
+toc-title: Агуулга
+
+number-sections: true
+format:
+  typst:
+    echo: true
+  html:
+    echo: true
+    toc: true
+
+execute:
+  echo: true
+  eval: false
+  warning: false
+  message: false
 ---
 
-## Хураангуй
+```python
+import json
+import sys
+from pathlib import Path
 
-Энэхүү төслийн зорилго нь Gen Z хэрэглэгчдийн social media хэрэглээний өгөгдөл дээр үндэслэн `addiction_level` буюу донтолтын түвшинг `Low`, `Medium`, `High` гэсэн гурван ангилалд Naive Bayes алгоритмаар ангилах явдал юм.
+import pandas as pd
 
-## Өгөгдөл
+ROOT = Path.cwd()
 
-Ашигласан өгөгдөл нь `genz_social_media_usage_1M.csv` файл бөгөөд нас, хүйс, улс, өдөр тутмын хэрэглээний цаг, хэрэглэдэг платформ, шөнийн хэрэглээ, mental health score зэрэг хувьсагчтай.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-## Арга зүй
+from src.config import CATEGORICAL_COLUMNS
+from src.config import FEATURE_COLUMNS
+from src.config import NUMERIC_COLUMNS
+from src.config import TARGET_COLUMN
+from src.dataset import read_dataset
+from src.metrics import classification_report
+from src.naive_bayes import NaiveBayes
 
-Тоон хувьсагчдад Gaussian Naive Bayes, категори хувьсагчдад Laplace smoothing ашигласан categorical Naive Bayes хэрэглэсэн. Эцсийн ангиллыг class prior болон feature бүрийн log probability-ийн нийлбэрээр сонгосон.
+train_data, dev_data = read_dataset()
 
-## Ажиллуулах код
+metadata = json.loads(
+    Path("data/processed/metadata.json").read_text(encoding="utf-8")
+)
 
-```{bash}
-python3 src/main.py
+saved_metrics = json.loads(
+    Path("outputs/metrics.json").read_text(encoding="utf-8")
+)
 ```
 
-## Үр дүн
+# Оршил
 
-Загварын нарийвчлал болон confusion matrix нь `outputs/metrics.json` файлд хадгалагдана. Visualization зургууд `outputs/figures/` хавтас дотор үүснэ.
+Сүүлийн жилүүдэд social media хэрэглээ нь мэдээлэл авах, суралцах, харилцах, өөрийгөө илэрхийлэх үндсэн хэрэгслүүдийн нэг болсон. Гэвч хэрэглээний хугацаа хэт уртсах, унтахын өмнөх дэлгэцийн хэрэглээ нэмэгдэх, шөнийн хэрэглээ тогтмолжих зэрэг зан төлөвүүд нь хэрэглэгчийн өдөр тутмын амьдрал, сэтгэлзүйн байдал, анхаарал төвлөрөлд нөлөөлөх боломжтой.
+
+Энэхүү төслийн зорилго нь social media хэрэглээний тоон болон категори өгөгдөл дээр үндэслэн хэрэглэгчийн `addiction_level` буюу донтолтын түвшинг машин сургалтын статистик арга болох Naive Bayes алгоритмаар ангилах явдал юм.
+
+Судалгааны асуудлыг дараах байдлаар томъёолов.
+
+> Хэрэглэгчийн нас, өдөр тутмын хэрэглээний цаг, платформын тоо, session-ийн дундаж хугацаа, шөнийн хэрэглээ, mental health score, унтахын өмнөх screen time болон хэрэглээний зорилго зэрэг өгөгдлөөр донтолтын түвшинг автоматаар ангилж болох уу?
+
+Энэхүү асуудал нь тайлбарлагдах боломжтой статистик загвар ашиглан ангилал хийх зорилготой тул төслийн ажлын удирдамжид дурдсан Байесын алгоритмын шаардлагатай нийцэж байна.
+
+# Судалгааны зорилго ба зорилтууд
+
+## Ерөнхий зорилго
+
+Gen Z хэрэглэгчдийн social media хэрэглээний өгөгдлийг ашиглан донтолтын түвшинг `Low`, `Medium`, `High` гэсэн гурван ангилалд Naive Bayes алгоритмаар ангилах загвар боловсруулах.
+
+## Тусгай зорилтууд
+
+1. Өгөгдлийг машин сургалтын загварт ашиглахад тохиромжтой хэлбэрт оруулах.
+2. Тоон болон категори хувьсагчдыг тус тусад нь тохирох магадлалын аргаар боловсруулах.
+3. Naive Bayes загварыг Python хэл дээр гаднын машин сургалтын сан ашиглалгүй хэрэгжүүлэх.
+4. Загварыг сургалтын өгөгдөл дээр сургаж, хөгжүүлэлтийн өгөгдөл дээр шалгах.
+5. Accuracy, precision, recall, F1-score болон confusion matrix ашиглан үр дүнг үнэлэх.
+6. Үр дүнг график дүрслэлээр тайлбарлах.
+
+# Судалгааны өгөгдөл
+
+## Өгөгдлийн эх сурвалж ба ерөнхий тайлбар
+
+Судалгаанд `genz_social_media_usage_1M.csv` нэртэй CSV файл ашигласан. Тус файл нь Gen Z хэрэглэгчдийн social media хэрэглээний шинжүүд болон донтолтын түвшний ангиллыг агуулна.
+
+Эх өгөгдөлд нийт 1,000,000 мөр, дараах үндсэн баганууд орсон.
+
+```python
+print("Нийт мөр:", metadata["cleaning_summary"]["rows_before"])
+print("Target column:", metadata["target_column"])
+print("Тоон хувьсагчид:", metadata["numeric_features"])
+print("Категори хувьсагчид:", metadata["categorical_features"])
+```
+
+Төслийн ажилд ашигласан хувьсагчдыг дараах байдлаар ангилав.
+
+| Төрөл | Хувьсагчид | Тайлбар |
+|---|---|---|
+| Тоон хувьсагч | `age` | Хэрэглэгчийн нас |
+| Тоон хувьсагч | `daily_usage_hours` | Өдөрт social media ашиглах цаг |
+| Тоон хувьсагч | `num_platforms_used` | Ашигладаг платформын тоо |
+| Тоон хувьсагч | `avg_session_minutes` | Нэг session-ийн дундаж минут |
+| Тоон хувьсагч | `night_usage` | Шөнийн хэрэглээ байгаа эсэх |
+| Тоон хувьсагч | `mental_health_score` | Сэтгэлзүйн байдлыг илэрхийлэх оноо |
+| Тоон хувьсагч | `screen_time_before_sleep` | Унтахын өмнөх дэлгэцийн хэрэглээ |
+| Категори хувьсагч | `gender` | Хүйс |
+| Категори хувьсагч | `country` | Улс |
+| Категори хувьсагч | `primary_platform` | Гол хэрэглэдэг платформ |
+| Категори хувьсагч | `purpose` | Social media ашиглах гол зорилго |
+| Target | `addiction_level` | Донтолтын түвшин |
+
+`addiction_level` багана нь дараах гурван ангилалтай.
+
+```python
+print(train_data[TARGET_COLUMN].value_counts().sort_index())
+```
+
+## Өгөгдөл бэлтгэл
+
+Өгөгдөл бэлтгэх үед дараах алхмуудыг хийсэн.
+
+1. Шаардлагатай баганууд байгаа эсэхийг шалгасан.
+2. Категори хувьсагчдын хоосон зайг цэвэрлэсэн.
+3. Тоон багануудыг numeric төрөл рүү хөрвүүлсэн.
+4. Missing value байгаа эсэхийг шалгасан.
+5. Тоон багануудад боломжит утгын хязгаарлалт хийсэн.
+6. Давхардсан мөрүүдийг шалгасан.
+7. Өгөгдлийг stratified байдлаар train болон dev хэсэгт хуваасан.
+
+Доорх код нь өгөгдөл унших, цэвэрлэх, train/dev split хийх үндсэн функцийг дуудна.
+
+```python
+from src.dataset import read_dataset
+
+train_data, dev_data = read_dataset()
+
+print("Train rows:", len(train_data))
+print("Dev rows:", len(dev_data))
+```
+
+Өгөгдөл цэвэрлэгээний хураангуй:
+
+```python
+cleaning = metadata["cleaning_summary"]
+
+print("Анхны мөрийн тоо:", cleaning["rows_before"])
+print("Цэвэрлэгээний дараах мөрийн тоо:", cleaning["rows_after_cleaning"])
+print("Давхардал арилгасны дараах мөрийн тоо:", cleaning["rows_after_deduplication"])
+print("Устгасан давхардал:", cleaning["duplicates_removed"])
+print("Missing value:")
+print(cleaning["missing_values_before_cleaning"])
+```
+
+## Train болон dev өгөгдлийн бүтэц
+
+Загварын үнэлгээг бодитой болгохын тулд нийт өгөгдлийн 80 хувийг сургалтад, 20 хувийг хөгжүүлэлтийн шалгалтад ашигласан.
+
+```python
+print("Train class counts")
+print(train_data[TARGET_COLUMN].value_counts().sort_index())
+
+print("\nDev class counts")
+print(dev_data[TARGET_COLUMN].value_counts().sort_index())
+```
+
+Ангиллын тархалт:
+
+![](figures/class_distribution.png){fig-cap="Сургалтын өгөгдөл дэх донтолтын түвшний тархалт"}
+
+Дээрх дүрслэлээс `Medium` ангилал хамгийн олон, дараа нь `Low`, харин `High` ангилал хамгийн бага байгаа нь харагдана. Иймээс зөвхөн accuracy үзүүлэлтээр хязгаарлахгүй, macro F1-score болон ангилал тус бүрийн precision, recall-ийг хамтад нь авч үзэх шаардлагатай.
+
+## Тоон хувьсагчдын статистик шинжилгээ
+
+Тоон хувьсагчдын ерөнхий статистикийг дараах байдлаар тооцоолов.
+
+```python
+summary_table = train_data[NUMERIC_COLUMNS].describe().T
+print(summary_table)
+```
+
+Ангилал тус бүрээр тоон хувьсагчдын дундаж утгыг харьцуулбал:
+
+```python
+feature_means = train_data.groupby(TARGET_COLUMN)[NUMERIC_COLUMNS].mean()
+print(feature_means)
+```
+
+![](figures/numeric_feature_means.png){fig-cap="Тоон хувьсагчдын дундаж утгын харьцуулсан дүрслэл"}
+
+Энэхүү дүрслэл нь `daily_usage_hours`, `avg_session_minutes`, `screen_time_before_sleep`, `mental_health_score` зэрэг хувьсагчид ангилал хооронд ялгаатай тархаж байгааг ерөнхийд нь харуулна. Naive Bayes загвар эдгээр ялгааг class conditional distribution буюу ангилал өгөгдсөн нөхцөл дэх тархалтаар ашигладаг.
+
+# Онолын үндэс
+
+## Байесын теорем
+
+Naive Bayes алгоритм нь Байесын теоремд үндэслэдэг. Ангиллын асуудалд тухайн ажиглалт $X$ өгөгдсөн үед $C$ ангилалд хамаарах магадлалыг дараах байдлаар тооцно.
+
+$$
+P(C\mid X)=\frac{P(X\mid C)P(C)}{P(X)}
+$$
+
+Энд:
+
+- $P(C)$ нь тухайн ангиллын урьдчилсан магадлал.
+- $P(X\mid C)$ нь тухайн ангилал өгөгдсөн үед ажиглалт үүсэх нөхцөлт магадлал.
+- $P(C\mid X)$ нь ажиглалт өгөгдсөний дараах ангиллын магадлал.
+- $P(X)$ нь бүх ангилалд ижил тул ангилал сонгох үед тогтмол хэмжигдэхүүн болно.
+
+Ангиллын шийдвэрийг хамгийн өндөр posterior probability бүхий ангиллыг сонгох зарчмаар гаргана.
+
+$$
+\hat{C}
+=
+\arg\max_C
+P(C\mid X)
+$$
+
+## Naive буюу хараат бусын таамаглал
+
+Naive Bayes загвар нь тайлбарлагч хувьсагчид тухайн ангилал өгөгдсөн нөхцөлд хоорондоо хараат бус гэж үздэг.
+
+$$
+P(X_1,X_2,\dots,X_n\mid C)
+=
+\prod_{i=1}^{n}
+P(X_i\mid C)
+$$
+
+Энэ таамаглал бодит өгөгдөл дээр бүрэн биелэхгүй байж болох ч тооцооллыг хялбаршуулж, олон хувьсагчтай өгөгдөл дээр хурдан, тайлбарлагдах боломжтой ангилал хийх давуу талтай.
+
+Энэхүү судалгаанд $X$ нь хэрэглэгчийн social media хэрэглээний шинжүүдийг илэрхийлнэ.
+
+$$
+X =
+(x_1,x_2,\dots,x_n)
+$$
+
+Харин $C$ нь `Low`, `Medium`, `High` донтолтын түвшний аль нэг байна.
+
+## Тоон хувьсагчдад Gaussian Naive Bayes ашиглах
+
+Тоон хувьсагч бүрийг тухайн ангилал дотор хэвийн тархалттай гэж ойролцоолон үзсэн. Тэгвэл $x_i$ тоон хувьсагчийн нөхцөлт магадлал дараах Gaussian density функцээр илэрхийлэгдэнэ.
+
+$$
+P(x_i\mid C)
+=
+\frac{1}{\sqrt{2\pi\sigma_C^2}}
+\exp
+\left(
+-
+\frac{(x_i-\mu_C)^2}{2\sigma_C^2}
+\right)
+$$
+
+Энд:
+
+- $\mu_C$ нь тухайн ангилал дахь хувьсагчийн дундаж.
+- $\sigma_C^2$ нь тухайн ангилал дахь хувьсагчийн дисперс.
+
+Загвар сургах үед тоон хувьсагч бүрийн class-wise mean болон variance-ийг тооцсон.
+
+## Категори хувьсагчдад Laplace smoothing ашиглах
+
+Категори хувьсагчдын хувьд тухайн утга тухайн ангилалд хэдэн удаа тохиолдсоныг ашиглан нөхцөлт магадлалыг тооцсон.
+
+$$
+P(x_i=v\mid C)
+=
+\frac{
+count(v,C)+\alpha
+}{
+N_C+\alpha(K+1)
+}
+$$
+
+Энд:
+
+- $count(v,C)$ нь $v$ утга $C$ ангилалд тохиолдсон тоо.
+- $N_C$ нь тухайн ангиллын нийт мөрийн тоо.
+- $K$ нь тухайн категори хувьсагчийн боломжит утгын тоо.
+- $\alpha$ нь smoothing параметр.
+
+Laplace smoothing ашигласнаар сургалтын өгөгдөлд харагдаагүй шинэ категори утга dev өгөгдөлд таарахад магадлал тэг болохоос сэргийлнэ.
+
+## Log probability ашиглах шалтгаан
+
+Олон жижиг магадлалуудыг шууд үржүүлэхэд тоон underflow үүсэх эрсдэлтэй. Иймээс үржвэрийг log probability-ийн нийлбэр болгон хувиргасан.
+
+$$
+\log P(C\mid X)
+\propto
+\log P(C)
++
+\sum_{i=1}^{n}
+\log P(X_i\mid C)
+$$
+
+Загварын шийдвэр:
+
+$$
+\hat{C}
+=
+\arg\max_C
+\left[
+\log P(C)
++
+\sum_{i=1}^{n}
+\log P(X_i\mid C)
+\right]
+$$
+
+# Загварын хэрэгжүүлэлт
+
+## Project-ийн кодын бүтэц
+
+Төслийн кодыг жишээ repo-ийн загвартай адил `src/` хавтас дотор модулиар салгасан.
+
+| Файл | Үүрэг |
+|---|---|
+| `src/config.py` | Файлын зам, feature list, target column зэрэг тогтмол тохиргоо |
+| `src/dataset.py` | Өгөгдөл унших, цэвэрлэх, train/dev болгон хуваах |
+| `src/naive_bayes.py` | Naive Bayes загварын үндсэн хэрэгжүүлэлт |
+| `src/metrics.py` | Accuracy, F1-score, confusion matrix тооцох |
+| `src/visualization.py` | SVG графикууд үүсгэх |
+| `src/main.py` | Бүх pipeline-г дарааллаар ажиллуулах |
+
+## Өгөгдөл унших ба боловсруулах код
+
+Доорх код нь `src/dataset.py` дотор хэрэгжсэн өгөгдөл унших, бэлтгэх pipeline-г ашиглана.
+
+```python
+from src.dataset import read_dataset
+
+train_data, dev_data = read_dataset()
+
+print(train_data.head())
+```
+
+Feature болон target-ийг салгав.
+
+```python
+train_features = train_data[FEATURE_COLUMNS]
+train_labels = train_data[TARGET_COLUMN].astype(str)
+
+dev_features = dev_data[FEATURE_COLUMNS]
+dev_labels = dev_data[TARGET_COLUMN].astype(str)
+
+print("Feature columns:", FEATURE_COLUMNS)
+print("Target:", TARGET_COLUMN)
+```
+
+## Naive Bayes загвар сургах
+
+Доорх код нь `src/naive_bayes.py` дотор бичсэн `NaiveBayes` class-ийг ашиглан загварыг сургана.
+
+```python
+model = NaiveBayes(alpha=1)
+
+model.fit(
+    train_features,
+    train_labels
+)
+
+print("Classes:", model.classes)
+```
+
+Сургалтын дараа загвар дараах үндсэн параметрүүдийг хадгална.
+
+1. Ангилал бүрийн prior probability.
+2. Тоон хувьсагч бүрийн ангилал тус бүр дэх mean болон variance.
+3. Категори хувьсагч бүрийн conditional probability.
+4. Шинэ категори утгад ашиглах smoothed probability.
+
+Ангиллын prior probability:
+
+```python
+for label, log_prior in model.class_log_prior.items():
+    print(label, round(log_prior, 4))
+```
+
+Нэг тоон хувьсагчийн class-wise параметрийн жишээ:
+
+```python
+for label in model.classes:
+    print(label, model.numeric_stats[label]["daily_usage_hours"])
+```
+
+## Таамаглал гаргах
+
+Dev өгөгдөл дээр таамаглал гаргав.
+
+```python
+predictions = model.predict(dev_features)
+
+print(predictions[:20])
+```
+
+# Загварын үнэлгээ
+
+## Үнэлгээний хэмжүүрүүд
+
+Ангиллын загварыг дараах хэмжүүрүүдээр үнэлсэн.
+
+Accuracy:
+
+$$
+Accuracy =
+\frac{
+Зөв\ ангилсан\ тоо
+}{
+Нийт\ ажиглалтын\ тоо
+}
+$$
+
+Precision:
+
+$$
+Precision =
+\frac{
+TP
+}{
+TP+FP
+}
+$$
+
+Recall:
+
+$$
+Recall =
+\frac{
+TP
+}{
+TP+FN
+}
+$$
+
+F1-score:
+
+$$
+F1 =
+\frac{
+2 \times Precision \times Recall
+}{
+Precision + Recall
+}
+$$
+
+Олон ангиллын асуудал тул precision, recall, F1-score-ийг ангилал бүрээр тооцож, macro F1-score-ийг гаргасан.
+
+## Тооцоолсон үр дүн
+
+```python
+report = classification_report(
+    predictions,
+    dev_labels,
+    model.classes
+)
+
+print("Accuracy:", round(report["accuracy"] * 100, 2), "%")
+print("Macro F1:", round(report["macro_f1"] * 100, 2), "%")
+```
+
+Ангилал тус бүрийн үзүүлэлт:
+
+```python
+per_class = pd.DataFrame(report["per_class"]).T
+print(per_class)
+```
+
+Үндсэн үр дүнг хүснэгтээр харуулбал:
+
+| Үзүүлэлт | Утга |
+|---|---:|
+| Accuracy | 93.05% |
+| Macro F1-score | 92.29% |
+| Dev өгөгдлийн мөр | 200,000 |
+| Train өгөгдлийн мөр | 800,000 |
+
+## Confusion matrix
+
+Confusion matrix нь бодит болон таамагласан ангиллын давхцлыг харуулдаг. Мөр нь бодит ангиллыг, багана нь загварын таамагласан ангиллыг илэрхийлнэ.
+
+```python
+labels = report["confusion_matrix"]["labels"]
+matrix = pd.DataFrame(
+    report["confusion_matrix"]["matrix"],
+    index=labels,
+    columns=labels
+)
+
+print(matrix)
+```
+
+![](figures/confusion_matrix.png){fig-cap="Naive Bayes загварын confusion matrix"}
+
+Confusion matrix-ээс дараах ажиглалтуудыг хийж болно.
+
+1. `Medium` ангиллын support хамгийн их тул нийт accuracy-д хүчтэй нөлөөлж байна.
+2. `Low` болон `High` ангиллууд хоорондоо шууд их андуурагдаагүй байна.
+3. `High` болон `Medium`, мөн `Low` болон `Medium` ангиллын хооронд зарим андуурал гарсан.
+4. Энэ нь дунд түвшний хэрэглээ болон өндөр/бага түвшний зааг зарим хэрэглэгч дээр ойролцоо байж болохыг харуулна.
+
+## Ангилал тус бүрийн тайлбар
+
+`High` ангиллын precision 88.99 хувь, recall 91.90 хувь гарсан. Энэ нь загвар өндөр донтолтын түвшинтэй хэрэглэгчдийг ерөнхийдөө сайн илрүүлж байгаа ч зарим `Medium` хэрэглэгчийг `High` гэж ангилах тохиолдол байгааг харуулна.
+
+`Low` ангиллын precision 91.63 хувь, recall 93.16 хувь гарсан. Энэ нь бага донтолтын түвшинг таних чадвар өндөр байгааг илэрхийлнэ.
+
+`Medium` ангиллын precision 94.82 хувь, recall 93.31 хувь гарсан. Энэ ангилал хамгийн олон ажиглалттай тул загварын параметр илүү тогтвортой үнэлэгдсэн байх боломжтой.
+
+# Үр дүнгийн хэлэлцүүлэг
+
+Загварын accuracy 93.05 хувь гарсан нь нийт dev өгөгдлийн ихэнхийг зөв ангилсныг харуулна. Гэхдээ өгөгдөлд `Medium` ангилал давамгай байгаа тул accuracy-г дангаар нь тайлбарлах нь хангалтгүй. Иймээс macro F1-score 92.29 хувь гарсан нь ангилал тус бүрийн гүйцэтгэлийг харьцангуй тэнцвэртэй үнэлсэн үзүүлэлт болж байна.
+
+Тоон хувьсагчдын class-wise mean болон variance-ийг ашигласнаар хэрэглээний цаг, session-ийн хугацаа, унтахын өмнөх screen time зэрэг тасралтгүй шинжүүд загварын шийдвэрт оролцсон. Харин `gender`, `country`, `primary_platform`, `purpose` зэрэг категори шинжүүд хэрэглэгчийн хэрэглээний хэв маягийг нэмэлтээр тайлбарласан.
+
+Энэхүү загварын давуу тал нь:
+
+1. Тооцоолол хурдан.
+2. Бүтэц энгийн.
+3. Магадлалын үндэслэлтэй.
+4. Ангилал тус бүрийн параметрийг тайлбарлах боломжтой.
+5. Том хэмжээний өгөгдөл дээр ажиллахад хөнгөн.
+
+Гэхдээ дараах хязгаарлалтууд байна.
+
+1. Naive Bayes нь feature-үүдийг conditional independent гэж үздэг.
+2. Бодит байдал дээр `daily_usage_hours`, `avg_session_minutes`, `screen_time_before_sleep` зэрэг хувьсагчид хоорондоо хамааралтай байх боломжтой.
+3. Тоон хувьсагчид бүрэн Gaussian тархалттай байх албагүй.
+4. `addiction_level` нь өгөгдөлд аль хэдийн өгөгдсөн label тул энэ загвар нь эмнэлзүйн онош биш, зөвхөн өгөгдлийн ангиллын загвар юм.
+5. Өгөгдлийн эх сурвалж, цуглуулах арга, label үүсгэсэн арга тодорхой байх тусам дүгнэлт илүү найдвартай болно.
+
+# Ёс зүйн анхаарах зүйл
+
+Энэхүү ажлын үр дүнг хэрэглэгчийг оношлох, шошголох, ялгаварлах зорилгоор ашиглах ёсгүй. `addiction_level` нь судалгааны өгөгдөл дэх ангиллын шошго бөгөөд бодит амьдрал дээр хүний сэтгэлзүйн байдал, хэрэглээний хэв маягийг мэргэжлийн үнэлгээ, нэмэлт мэдээлэлгүйгээр бүрэн тодорхойлох боломжгүй.
+
+Иймээс загварын үр дүнг:
+
+1. Сургалтын зорилгоор,
+2. Өгөгдөл боловсруулах дадлага болгон,
+3. Naive Bayes алгоритмын хэрэглээг ойлгох зорилгоор,
+4. Social media хэрэглээний ерөнхий хэв маягийг судлах туслах хэрэгсэл болгон
+
+ашиглах нь зохистой.
+
+# Дүгнэлт
+
+Энэхүү төслийн ажлаар Gen Z хэрэглэгчдийн social media хэрэглээний өгөгдөл дээр Naive Bayes ангиллын загвар боловсруулж, донтолтын түвшинг `Low`, `Medium`, `High` гэсэн гурван ангилалд таамаглав.
+
+Судалгааны үр дүнд:
+
+1. 1,000,000 мөр өгөгдлийг машин сургалтын загварт тохиромжтой хэлбэрт оруулсан.
+2. Өгөгдлийг 800,000 мөр train, 200,000 мөр dev болгон хуваасан.
+3. Тоон хувьсагчдад Gaussian Naive Bayes, категори хувьсагчдад Laplace smoothing ашигласан.
+4. Загвар 93.05 хувийн accuracy, 92.29 хувийн macro F1-score үзүүлсэн.
+5. Confusion matrix-ээр `Medium` ангилалд зарим андуурал төвлөрч байгааг тогтоосон.
+6. Naive Bayes алгоритм нь энэхүү өгөгдөл дээр хурдан, ойлгомжтой, статистикийн үндэслэлтэй ангилал хийх боломжтойг харуулсан.
+
+Иймээс сонгосон өгөгдөл болон арга зүй нь төслийн ажлын зорилготой нийцэж, машин сургалтын статистик загварыг практикт хэрэглэх шаардлагыг хангаж байна.
+
+# Багийн гишүүдийн оролцоо
+
+Доорх хүснэгтэд багийн гишүүдийн нэр, үүрэг оролцоог бөглөж оруулна.
+
+| Багийн гишүүн | Гүйцэтгэсэн ажил |
+|---|---|
+| Нэр 1 | Сэдэв сонголт, өгөгдлийн тайлбар, оршил ба дүгнэлт |
+| Нэр 2 | Өгөгдөл бэлтгэл, цэвэрлэгээ, train/dev split |
+| Нэр 3 | Naive Bayes алгоритмын хэрэгжүүлэлт |
+| Нэр 4 | Үнэлгээний хэмжүүр, confusion matrix, visualization |
+| Нэр 5 | Quarto тайлан, слайд, эх сурвалж нэгтгэл |
+
+# Ашигласан материал
+
+Russell, S., & Norvig, P. (2021). *Artificial intelligence: A modern approach* (4th ed.). Pearson.
+
+Python Software Foundation. (n.d.). *Python documentation*. Python.  
+https://docs.python.org/3/
+
+McKinney, W. (2010). Data structures for statistical computing in Python. *Proceedings of the 9th Python in Science Conference*, 56-61.
+
+Scikit-learn Developers. (n.d.). *Naive Bayes*. Scikit-learn.  
+https://scikit-learn.org/stable/modules/naive_bayes.html
+
+Kaggle. (n.d.). *Datasets*. Kaggle.  
+https://www.kaggle.com/datasets
+
+> Тайлбар: Хэрэв `genz_social_media_usage_1M.csv` өгөгдлийг тодорхой Kaggle dataset эсвэл өөр эх сурвалжаас татсан бол дээрх жагсаалтад тухайн dataset-ийн яг нэр, зохиогч, URL-ийг нэмж оруулна.
+
+# Хавсралт: Ажиллуулах команд
+
+Project-ийн root хавтас дотроос дараах командыг ажиллуулна.
+
+```bash
+python3 main.py
+```
+
+Virtual environment ашиглах дараалал:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
+python3 main.py
+```
+
+Quarto тайланг PDF болон HTML болгон render хийх:
+
+```bash
+quarto render report/report.qmd
+```
+
+Хэрэв terminal одоо `src/` хавтас дотор байгаа бол эхлээд project root руу буцна.
+
+```bash
+cd ..
+quarto render report/report.qmd
+```
