@@ -198,11 +198,22 @@ P(C|X) = P(X|C) * P(C) / P(X)
 quarto render report/report.qmd
 ```
 
-Слайд үүсгэх:
+RevealJS HTML слайд үүсгэх:
 
 ```bash
 quarto render slides/presentation.qmd
 ```
+
+PowerPoint файл үүсгэх:
+
+```bash
+quarto render slides/presentation.qmd --to pptx
+```
+
+Үүсэх файлууд:
+
+* `slides/presentation.html`
+* `slides/presentation.pptx`
 
 ---
 

@@ -1,5 +1,6 @@
 import math
 
+# pyrefly: ignore [missing-import]
 import numpy as np
 
 from src.config import CATEGORICAL_COLUMNS
